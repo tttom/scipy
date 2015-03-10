@@ -95,6 +95,7 @@ from .fftpack_version import fftpack_version as __version__
 from .basic import *
 from .pseudo_diffs import *
 from .helper import *
+from .czt import *
 
 from numpy.dual import register_func
 for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
