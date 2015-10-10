@@ -208,56 +208,6 @@ def _centered(arr, newsize):
     return arr[tuple(myslice)]
 
 
-def _next_regular(target):
-    """
-    Find the next regular number greater than or equal to target.
-    Regular numbers are composites of the prime factors 2, 3, and 5.
-    Also known as 5-smooth numbers or Hamming numbers, these are the optimal
-    size for inputs to FFTPACK.
-
-    Target must be a positive integer.
-    """
-    if target <= 6:
-        return target
-
-    # Quickly check if it's already a power of 2
-    if not (target & (target-1)):
-        return target
-
-    match = float('inf')  # Anything found will be smaller
-    p5 = 1
-    while p5 < target:
-        p35 = p5
-        while p35 < target:
-            # Ceiling integer division, avoiding conversion to float
-            # (quotient = ceil(target / p35))
-            quotient = -(-target // p35)
-
-            # Quickly find next power of 2 >= quotient
-            try:
-                p2 = 2**((quotient - 1).bit_length())
-            except AttributeError:
-                # Fallback for Python <2.7
-                p2 = 2**(len(bin(quotient - 1)) - 2)
-
-            N = p2 * p35
-            if N == target:
-                return N
-            elif N < match:
-                match = N
-            p35 *= 3
-            if p35 == target:
-                return p35
-        if p35 < match:
-            match = p35
-        p5 *= 5
-        if p5 == target:
-            return p5
-    if p5 < match:
-        match = p5
-    return match
-
-
 def fftconvolve(in1, in2, mode="full"):
     """Convolve two N-dimensional arrays using FFT.
 
@@ -356,7 +306,7 @@ def fftconvolve(in1, in2, mode="full"):
         _check_valid_mode_shapes(s1, s2)
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [_next_regular(int(d)) for d in shape]
+    fshape = [fftpack.helper._next_regular(int(d)) for d in shape]
     fslice = tuple([slice(0, int(sz)) for sz in shape])
     # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
     # sure we only call rfftn/irfftn from one thread at a time.
@@ -910,7 +860,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
-        # Any of b, a, x, or zi can set the dtype, but there is no default 
+        # Any of b, a, x, or zi can set the dtype, but there is no default
         # casting of other types; instead a NotImplementedError is raised.
         b = np.asarray(b)
         a = np.asarray(a)
@@ -1138,7 +1088,7 @@ def hilbert(x, N=None, axis=-1):
     ---------
     In this example we use the Hilbert transform to determine the amplitude
     envelope and instantaneous frequency of an amplitude-modulated signal.
-        
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import hilbert, chirp
@@ -1148,15 +1098,15 @@ def hilbert(x, N=None, axis=-1):
     >>> samples = int(fs*duration)
     >>> t = np.arange(samples) / fs
 
-    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and 
+    We create a chirp of which the frequency increases from 20 Hz to 100 Hz and
     apply an amplitude modulation.
-    
-    >>> signal = chirp(t, 20.0, t[-1], 100.0)    
+
+    >>> signal = chirp(t, 20.0, t[-1], 100.0)
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
-    The amplitude envelope is given by magnitude of the analytic signal. The 
-    instantaneous frequency can be obtained by differentiating the instantaneous 
-    phase in respect to time. The instantaneous phase corresponds to the phase 
+    The amplitude envelope is given by magnitude of the analytic signal. The
+    instantaneous frequency can be obtained by differentiating the instantaneous
+    phase in respect to time. The instantaneous phase corresponds to the phase
     angle of the analytic signal.
 
     >>> analytic_signal = hilbert(signal)
@@ -1180,7 +1130,7 @@ def hilbert(x, N=None, axis=-1):
     .. [1] Wikipedia, "Analytic signal".
            http://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing, 
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing,
            Third Edition, 2009. Chapter 12. ISBN 13: 978-1292-02572-8
 
     """
@@ -1707,12 +1657,12 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the next cycle:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f = signal.resample(y, 100)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
