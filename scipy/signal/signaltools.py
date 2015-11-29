@@ -306,7 +306,7 @@ def fftconvolve(in1, in2, mode="full"):
         _check_valid_mode_shapes(s1, s2)
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.helper._next_regular(int(d)) for d in shape]
+    fshape = [fftpack.helper._next_opt_len(int(d)) for d in shape]
     fslice = tuple([slice(0, int(sz)) for sz in shape])
     # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
     # sure we only call rfftn/irfftn from one thread at a time.
