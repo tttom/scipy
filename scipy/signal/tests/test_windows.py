@@ -214,6 +214,16 @@ def test_windowfunc_basics():
             window(6, *params, sym=False)
 
 
+def test_needs_params():
+    for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
+                   'general gaussian', 'general_gaussian',
+                   'general gauss', 'general_gauss', 'ggs',
+                   'slepian', 'optimal', 'slep', 'dss', 'dpss',
+                   'chebwin', 'cheb', 'exponential', 'poisson', 'tukey',
+                   'tuk']:
+        assert_raises(ValueError, signal.get_window, winstr, 7)
+
+
 def test_kaiser_derived():
     M = 100
     w = signal.kaiser_derived(M, beta=4.)
@@ -228,7 +238,6 @@ def test_kaiser_derived():
 
     # Assert ValueError for odd window length
     assert_raises(ValueError, signal.kaiser_derived, M, beta=4., sym=False)
-
 
 if __name__ == "__main__":
     run_module_suite()

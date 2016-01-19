@@ -1066,7 +1066,7 @@ def kaiser(M, beta, sym=True):
 
 
 def kaiser_derived(M, beta, sym=True):
-    """ Return a Kaiser-Bessel derived window.
+    """Return a Kaiser-Bessel derived window.
 
     Parameters
     ----------
@@ -1095,7 +1095,7 @@ def kaiser_derived(M, beta, sym=True):
     transform (MDCT) and is mainly used in audio signal processing and
     audio coding.
 
-    .. versionadded:: 0.16.0
+    .. versionadded:: 0.18.0
 
     References
     ----------
@@ -1110,7 +1110,7 @@ def kaiser_derived(M, beta, sym=True):
     >>> from scipy.fftpack import fft, fftshift
     >>> import matplotlib.pyplot as plt
 
-    >>> window = signal.kaiser_derived(50)
+    >>> window = signal.kaiser_derived(50, 4.0)
     >>> plt.plot(window)
     >>> plt.title("Kaiser-Bessel derived window")
     >>> plt.ylabel("Amplitude")
@@ -1131,8 +1131,7 @@ def kaiser_derived(M, beta, sym=True):
     if not sym:
         raise ValueError(
             "Kaiser Bessel Derived windows are only defined for symmetric "
-            "shapes"
-        )
+            "shapes")
 
     if M < 1:
         return np.array([])
@@ -1140,8 +1139,7 @@ def kaiser_derived(M, beta, sym=True):
     if M % 2:
         raise ValueError(
             "Kaiser Bessel Derived windows are only defined for even number "
-            "of taps"
-        )
+            "of taps")
 
     w = np.zeros(M)
     kaiserw = kaiser(M // 2 + 1, beta)
