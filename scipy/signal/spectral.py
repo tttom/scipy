@@ -420,7 +420,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     return freqs, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -752,8 +752,9 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
         segments, so that all of the signal is included in the output.
-        Default to `True`. Padding occurs after centering, if both
-        `centered` and `padded` are `True`, as is the default.
+        Default to `True`. Otherwise, the end of the signal is truncated
+        if necessary. Padding occurs after centering, if both `centered`
+        and `padded` are `True` (as is the default).
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
@@ -923,8 +924,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     `check_COLA`, by using ``nperseg = Zxx.shape[freq_axis]``.
 
     An STFT which has been modified (via masking or otherwise) is not
-    guaranteed to correspond to a exactly realizible signal. This
-    function implements the iSTFT via the least-squares esimation
+    guaranteed to correspond to an exactly realizable signal. This
+    function implements the iSTFT via the least-squares estimation
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
@@ -1377,7 +1378,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
             raise ValueError('nperseg must be a positive integer')
 
     # parse window; if array like, then set nperseg = win.shape
-    win, nperseg = _triage_segments(window, nperseg,input_length=x.shape[-1])
+    win, nperseg = _triage_segments(window, nperseg, input_length=x.shape[-1])
 
     if nfft is None:
         nfft = nperseg
@@ -1434,7 +1435,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     else:
         detrend_func = detrend
 
-    if np.result_type(win,np.complex64) != outdtype:
+    if np.result_type(win, np.complex64) != outdtype:
         win = win.astype(outdtype)
 
     if scaling == 'density':
@@ -1565,7 +1566,8 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     return result
 
-def _triage_segments(window, nperseg,input_length):
+
+def _triage_segments(window, nperseg, input_length):
     """
     Parses window and nperseg arguments for spectrogram and _spectral_helper.
     This is a helper function, not meant to be called externally.
@@ -1600,15 +1602,15 @@ def _triage_segments(window, nperseg,input_length):
         window.
     """
 
-    #parse window; if array like, then set nperseg = win.shape
+    # parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
         # if nperseg not specified
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
             warnings.warn('nperseg = {0:d} is greater than input length '
-                              ' = {1:d}, using nperseg = {1:d}'
-                              .format(nperseg, input_length))
+                          ' = {1:d}, using nperseg = {1:d}'
+                          .format(nperseg, input_length))
             nperseg = input_length
         win = get_window(window, nperseg)
     else:
@@ -1621,6 +1623,6 @@ def _triage_segments(window, nperseg,input_length):
             nperseg = win.shape[0]
         elif nperseg is not None:
             if nperseg != win.shape[0]:
-                raise ValueError("value specified for nperseg is different from"
-                                 " length of window")
+                raise ValueError("value specified for nperseg is different "
+                                 "from length of window")
     return win, nperseg
