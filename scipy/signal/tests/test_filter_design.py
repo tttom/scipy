@@ -21,7 +21,7 @@ from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           lp2bs, lp2hp, lp2lp, normalize, sos2tf, sos2zpk,
                           sosfreqz, tf2sos, tf2zpk, zpk2sos, zpk2tf,
                           bilinear_zpk, lp2lp_zpk, lp2hp_zpk, lp2bp_zpk,
-                          lp2bs_zpk)
+                          lp2bs_zpk, thiran)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
@@ -1879,6 +1879,25 @@ class TestBessel(object):
         assert_raises(ValueError, besselap, 3.2)
         assert_raises(ValueError, _bessel_poly, -3)
         assert_raises(ValueError, _bessel_poly, 3.3)
+
+
+class TestThiran(object):
+
+    def test_degenerate(self):
+        # 0-order filter is just a passthrough
+        b, a = thiran(0, 1)  # all or low
+        assert_array_equal(b, [1])
+        assert_array_equal(a, [1])
+
+        # 1-order filter is same for all types
+        b, a = thiran(1, 1, analog=True)
+        assert_allclose(b, [1], rtol=1e-15)
+        assert_allclose(a, [1, 1], rtol=1e-15)
+
+        z, p, k = thiran(1, 0.3, analog=True, output='zpk')
+        assert_array_equal(z, [])
+        assert_allclose(p, [-0.3], rtol=1e-14)
+        assert_allclose(k, 0.3, rtol=1e-14)
 
 
 class TestButter(object):

@@ -3715,6 +3715,22 @@ def _falling_factorial(x, n):
     return val
 
 
+def _rising_factorial(x, n):
+    """
+    Return the factorial of `x` to the `n` rising.
+
+    This is defined as:
+
+    .. math::   x^\overline n = x^{(n)} = x (x+1) \cdots (x+n-1)
+
+    the usual factorial n! == rf(1, n)
+    """
+    val = 1
+    for k in range(n):
+        val *= x + k
+    return val
+
+
 def _bessel_poly(n, reverse=False):
     """
     Return the coefficients of Bessel polynomial of degree `n`
@@ -3740,7 +3756,6 @@ def _bessel_poly(n, reverse=False):
     ...     for x in _bessel_poly(n, reverse=True):
     ...         print(i, x)
     ...         i += 1
-
     """
     if abs(int(n)) != n:
         raise ValueError("Polynomial order must be a nonnegative integer")
@@ -3993,6 +4008,144 @@ def besselap(N, norm='phase'):
             raise ValueError('normalization not understood')
 
     return asarray([]), asarray(p, dtype=complex), float(k)
+
+
+# TODO: fs parameter
+# TODO Currently it's generating num and den explicitly.
+# Confirm that's correct first and then try to find roots instead
+def thiran(N, Wn, btype='low', output='ba'):
+    """
+    Thiran digital filter design.
+
+    Design an Nth-order digital Thiran filter and return the filter
+    coefficients.
+
+    Parameters
+    ----------
+    N : int
+        The order of the filter.
+    Wn : array_like
+        Wn = 1/tau
+        where tau is in TODO
+
+        A scalar or length-2 sequence giving the critical frequencies.
+
+        For digital filters, `Wn` is normalized from 0 to 1, where 1 is the
+        Nyquist frequency, pi radians/sample.  (`Wn` is thus in
+        half-cycles / sample.)
+        For analog filters, `Wn` is an angular frequency (e.g. rad/s).
+    btype : {'lowpass', 'allpass'}, optional
+        The type of filter.  Default is 'lowpass'.
+            only allow btype = low, allpass?
+        TODO: Thiran lowpass is like a digital Bessel filter, passing low
+        frequencies with the same amount of delay
+        allpass filter is used to approximate a delay line, with sub-sample
+        ... (what's the word they use?)
+    output : {'ba', 'zpk', 'sos'}, optional
+        Type of output:  numerator/denominator ('ba'), pole-zero ('zpk'), or
+        second-order sections ('sos'). Default is 'ba'.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (`b`) and denominator (`a`) polynomials of the IIR filter.
+        Only returned if ``output='ba'``.
+    z, p, k : ndarray, ndarray, float
+        Zeros, poles, and system gain of the IIR filter transfer
+        function.  Only returned if ``output='zpk'``.
+    sos : ndarray
+        Second-order sections representation of the IIR filter.
+        Only returned if ``output=='sos'``.
+
+    See Also
+    --------
+    bessel : The analog filter with maximally-flat group delay
+
+    Notes
+    -----
+    The Thiran filter is the digital equivalent of the analog Bessel filter;
+    the IIR filter with maximally-flat group delay and maximally-linear phase.
+
+    Examples
+    --------
+    Reproduce Figure 2 from Thiran:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> for n in (5, 10, 15):
+    >>>     b, a = signal.thiran(n, 1/4.)
+    >>>     w, h = signal.freqz(b, a)
+    >>>     plt.plot(w/(2*pi), -20*log10(abs(h)))
+    >>> plt.ylim(0, 80)
+    >>> plt.title(r'Thiran filter Loss versus frequency for $\tau$ = 4')
+
+    TODO: combine these somehow [??]
+
+    Reproduce Figure 3 from Thiran:
+
+    >>> plt.figure()
+    >>> for N in (5, 10, 15):
+    >>>     b, a = thiran(N, 1/4.)
+    >>>     w, h = freqz(b, a)
+    >>>     group_delay = -np.diff(np.unwrap(np.angle(h)))/np.diff(w)
+    >>>     plt.plot(w[1:]/(2*pi), group_delay, label='N = {}'.format(N))
+    >>> plt.axhline(4, ls=':')  # 4 ___seconds__ group delay
+    >>> plt.title(r'Thiran filter group delay vs frequency for $\tau$ = 4')
+    >>> plt.xlabel('Frequency [radiafdsfdsns / second]')
+    >>> plt.ylabel('Group delay [maybe what]')
+    >>> plt.legend(loc='best')
+    >>> plt.ylim(-5, 5)
+    >>> plt.grid(True, color='0.7', linestyle='-', which='both', axis='both')
+    >>> plt.show()
+
+    Delay a signal:
+
+
+
+    Lowpass filter a square wave while minimizing phase distorion:
+
+    >>> t = linspace(0, 1, 400)
+    >>> sig = signal.square(2*pi*5*t)
+    >>> sos_butt = signal.butter(8, 20/(400/2), output='sos')
+    >>> sos_thir = signal.thiran(8, 15/(400/2), output='sos')
+    >>> sig_butt = signal.sosfilt(sos_butt, sig)
+    >>> sig_thir = signal.sosfilt(sos_thir, sig)
+    >>> fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    >>> ax1.plot(sig, ':')
+    >>> ax1.plot(sig_butt)
+    >>> ax2.plot(sig, ':')
+    >>> ax2.plot(sig_thir)
+
+    References
+    ----------
+    .. [1] Thiran, "Recursive digital filters with maximally flat group delay,"
+           in IEEE Transactions on Circuit Theory, vol. 18, no. 6,
+           pp. 659-664, Nov 1971. doi: 10.1109/TCT.1971.1083363
+    .. [2] Fernandez-Vazquez and Dolecek, "Stability of real-valued maximally
+           flat Thiran allpole filters," in Electronics Letters, vol. 48,
+           no. 21, pp. 1341-1343, October 11 2012. doi: 10.1049/el.2012.2211
+
+    """
+    tau = 1/Wn  # TODO: ????
+
+    # So if allpass, change 2*tau to tau and use it as the numerator also?
+
+    d = np.empty(N+1)
+    for n in range(N+1):
+        thing = (_rising_factorial(2*tau, n) /
+                 _rising_factorial(2*tau + N + 1, n))
+
+        d[n] = (-1)**n * comb(N, n, True) * thing
+
+    num = array([sum(d)])  # normalize?
+    den = d
+
+    if output == 'ba':
+        return num, den
+    elif output == 'sos':
+        return tf2sos(num, den)
+    elif output == 'zpk':
+        return tf2zpk(num, den)
 
 
 def iirnotch(w0, Q):
