@@ -21,7 +21,8 @@ import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
-from .optimize import wrap_function, OptimizeResult, _check_unknown_options
+from .optimize import (wrap_function, OptimizeResult, _check_unknown_options,
+                       InvalidResult)
 
 __docformat__ = "restructuredtext en"
 
@@ -448,9 +449,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
+    if mode == 0:
+        success = True
+    elif mode in (4, 8):  # Constraints incompatible or search is out of bounds
+        success = InvalidResult
+    else:
+        success = False
+
     return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
                           nfev=feval[0], njev=geval[0], status=int(mode),
-                          message=exit_modes[int(mode)], success=(mode == 0))
+                          message=exit_modes[int(mode)], success=success)
 
 
 if __name__ == '__main__':
