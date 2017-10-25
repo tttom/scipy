@@ -67,24 +67,34 @@ class BasinHoppingRunner(object):
 
         self.nstep = 0
 
-        # initialize return object
+        # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
         self.res.minimization_failures = 0
 
-        # do initial minimization
+        # Do initial minimization
         minres = minimizer(self.x)
         if not minres.success:
             self.res.minimization_failures += 1
             if self.disp:
-                print("warning: basinhopping: local minimization failure")
-        self.x = np.copy(minres.x)
-        self.energy = minres.fun
+                print("warning: basinhopping: initial minimization failure")
+
+        if minres.success is scipy.optimize.InvalidResult:
+            # Result was invalid, so keep original x and don't put invalid
+            # value in storage.  Any minima found will be lower in
+            # function value and replace this
+            self.energy = float('inf')
+            minres.fun = float('inf')
+        else:
+            # Update starting point to the minimum that was found
+            self.x = np.copy(minres.x)
+            self.energy = minres.fun
         if self.disp:
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
-        # initialize storage class
+        # Initialize storage class
         self.storage = Storage(minres)
 
+        # Counters to keep track of global totals
         if hasattr(minres, "nfev"):
             self.res.nfev = minres.nfev
         if hasattr(minres, "njev"):
