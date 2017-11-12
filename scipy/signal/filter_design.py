@@ -27,7 +27,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients', 'freqs_zpk', 'freqz_zpk',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'sosfreqz', 'iirnotch', 'iirpeak', 'bilinear_zpk',
+           'sosfreqz', 'freqz_sos', 'iirnotch', 'iirpeak', 'bilinear_zpk',
            'lp2lp_zpk', 'lp2hp_zpk', 'lp2bp_zpk', 'lp2bs_zpk']
 
 
@@ -311,7 +311,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     See Also
     --------
     freqz_zpk
-    sosfreqz
+    freqz_sos
 
     Notes
     -----
@@ -651,7 +651,7 @@ def _validate_sos(sos):
     return sos, n_sections
 
 
-def sosfreqz(sos, worN=None, whole=False):
+def freqz_sos(sos, worN=None, whole=False):
     """
     Compute the frequency response of a digital filter in SOS format.
 
@@ -713,7 +713,7 @@ def sosfreqz(sos, worN=None, whole=False):
 
     Compute the frequency response at 1500 points from DC to Nyquist.
 
-    >>> w, h = signal.sosfreqz(sos, worN=1500)
+    >>> w, h = signal.freqz_sos(sos, worN=1500)
 
     Plot the response.
 
@@ -758,6 +758,11 @@ def sosfreqz(sos, worN=None, whole=False):
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole)
         h *= rowh
     return w, h
+
+
+@np.deprecate(new_name='freqz_sos')
+def sosfreqz(*args, **kwargs):
+    return freqz_sos(*args, **kwargs)
 
 
 def _cplxreal(z, tol=None):
