@@ -273,6 +273,11 @@ def fftconvolve(in1, in2, mode="full"):
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
+        ``circ``
+           Circular convolution: The arrays are circular-shifted instead of
+           [reword:] leaving overhang.
+           If one array is shorter than the other, it is zero-padded to make
+           their lengths equal.
 
     Returns
     -------
@@ -321,6 +326,8 @@ def fftconvolve(in1, in2, mode="full"):
     >>> ax_blurred.set_axis_off()
     >>> fig.show()
 
+    TODO: Circular convolution
+
     """
     in1 = asarray(in1)
     in2 = asarray(in2)
@@ -336,7 +343,10 @@ def fftconvolve(in1, in2, mode="full"):
     s2 = array(in2.shape)
     complex_result = (np.issubdtype(in1.dtype, complex) or
                       np.issubdtype(in2.dtype, complex))
-    shape = s1 + s2 - 1
+    if mode == 'circ':
+        shape = [max(a, b) for a, b in zip(s1, s2)]
+    else:
+        shape = s1 + s2 - 1
 
     # Check that input sizes are compatible with 'valid' mode
     if _inputs_swap_needed(mode, s1, s2):
@@ -344,7 +354,8 @@ def fftconvolve(in1, in2, mode="full"):
         in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [fftpack.helper.next_fast_len(int(d)) for d in shape]
+#    fshape = [fftpack.helper.next_fast_len(int(d)) for d in shape]
+    fshape = shape
     fslice = tuple([slice(0, int(sz)) for sz in shape])
     # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
     # sure we only call rfftn/irfftn from one thread at a time.
@@ -367,7 +378,7 @@ def fftconvolve(in1, in2, mode="full"):
         if not complex_result:
             ret = ret.real
 
-    if mode == "full":
+    if mode in {"full", "circ"}:
         return ret
     elif mode == "same":
         return _centered(ret, s1)

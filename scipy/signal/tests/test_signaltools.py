@@ -409,6 +409,30 @@ class TestFFTConvolve(TestCase):
         self.assertRaises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
 
+    def test_real_circ_mode(self):
+        # Equal length example, from
+        # http://www.mathworks.com/help/signal/ref/cconv.html
+        a = [2, 1, 2, 1]
+        b = [1, 2, 3, 4]
+        c = [14, 16, 14, 16]
+        assert_array_almost_equal(c, fftconvolve(a, b, 'circ'))
+        assert_array_almost_equal(c, fftconvolve(b, a, 'circ'))
+
+        # from http://www.ecsutton.ece.ufl.edu/dip/handouts/convexample.pdf
+        a = [1, 3, -2, 1]
+        b = [1, 1, 0, 0]
+        c = [2, 4, 1, -1]
+        assert_array_almost_equal(c, fftconvolve(a, b, 'circ'))
+        assert_array_almost_equal(c, fftconvolve(b, a, 'circ'))
+
+        # Zero-padding example, from
+        # http://site.iugaza.edu.ps/musbahshaat/files/circonv_long.pdf
+        a = [1, 2, 4, 5, 6]
+        b = [7, 8, 9, 3]
+        c = [112, 91, 71, 88, 124]
+        assert_array_almost_equal(c, fftconvolve(a, b, 'circ'))
+        assert_array_almost_equal(c, fftconvolve(b, a, 'circ'))
+
 
 class TestMedFilt(TestCase):
 
