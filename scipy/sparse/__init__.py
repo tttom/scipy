@@ -142,7 +142,7 @@ the matrix `dot` method, as described in its docstring:
 array([ 1, -3, -1], dtype=int64)
 
 .. warning:: As of NumPy 1.7, `np.dot` is not aware of sparse matrices,
-  therefore using it will result on unexpected results or errors.
+  therefore using it will result in unexpected results or errors.
   The corresponding dense array should be obtained first instead:
 
   >>> np.dot(A.toarray(), v)
@@ -213,7 +213,7 @@ Further Details
 ---------------
 
 CSR column indices are not necessarily sorted.  Likewise for CSC row
-indices.  Use the .sorted_indices() and .sort_indices() methods when
+indices.  Use the ``.sorted_indices()`` and ``.sort_indices()`` methods when
 sorted indices are required (e.g. when passing data to other libraries).
 
 """
