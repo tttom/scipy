@@ -2234,40 +2234,44 @@ def resample(x, num, t=None, axis=0, window=None):
         else:
             W = fftpack.ifftshift(get_window(window, Nx))
         newshape_W = [1] * x.ndim
-        newshape_W[axis] = len(W)
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
-    newshape[axis] = num
     N = int(np.minimum(num, Nx))
 
     # Check if we can use faster real FFT
     if np.isrealobj(x):
-        X = fftpack.rfft(x, axis=axis)
+        X = np.fft.rfft(x, axis=axis)
         if window is not None:
+            newshape_W[axis] = len(W)
             # Fold the window back on itself to mimic previous behavior
             W_real = W.copy()
             W_real[1:] += W_real[-1:0:-1]
             W_real[1:] /= 2
-            W_real = np.repeat(W_real, 2)[1:Nx+1]
-            X *= W_real.reshape(newshape_W)
-        Y = zeros(newshape)
-        sl[axis] = slice(0, N)
+            newshape_W[axis] = X.shape[axis]
+            X *= W_real[:X.shape[axis]].reshape(newshape_W)
+
+        newshape[axis] = num // 2 + 1
+        Y = zeros(newshape, X.dtype)
+        nyq = N // 2 + 1
+        sl[axis] = slice(0, nyq)
         Y[tuple(sl)] = X[tuple(sl)]
 
         if N % 2 == 0:
-            sl[axis] = slice(N-1, N)
+            sl[axis] = slice(nyq-1, nyq)
             if num < Nx:  # downsampling
                 Y[tuple(sl)] *= 2.
             elif Nx < num:  # upsampling
                 Y[tuple(sl)] *= 0.5
 
-        y = fftpack.irfft(Y, axis=axis, overwrite_x=True)
+        y = np.fft.irfft(Y, num, axis=axis)
     # Full complex FFT
     else:
         X = fftpack.fft(x, axis=axis)
         if window is not None:
+            newshape_W[axis] = len(W)
             X *= W.reshape(newshape_W)
-        Y = zeros(newshape, 'D')
+        newshape[axis] = num
+        Y = zeros(newshape, X.dtype)
         sl[axis] = slice(0, (N + 1) // 2)
         Y[tuple(sl)] = X[tuple(sl)]
         if N > 1:
