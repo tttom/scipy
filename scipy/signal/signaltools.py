@@ -2246,7 +2246,7 @@ def resample(x, num, t=None, axis=0, window=None):
             # Fold the window back on itself to mimic previous behavior
             W_real = W.copy()
             W_real[1:] += W_real[-1:0:-1]
-            W_real[1:] /= 2
+            W_real[1:] *= 0.5
             newshape_W[axis] = X.shape[axis]
             X *= W_real[:X.shape[axis]].reshape(newshape_W)
 
@@ -2289,7 +2289,7 @@ def resample(x, num, t=None, axis=0, window=None):
             elif Nx < num:  # upsampling
                 # select the component at frequency -N/2 and halve it
                 sl[axis] = slice(num-N//2, num-N//2+1, None)
-                Y[tuple(sl)] /= 2
+                Y[tuple(sl)] *= 0.5
                 temp = Y[tuple(sl)]
                 # set the component at +N/2 equal to the component at -N/2
                 sl[axis] = slice(N//2, N//2+1, None)
