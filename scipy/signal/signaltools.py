@@ -2236,7 +2236,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape_W = [1] * x.ndim
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
-    N = int(np.minimum(num, Nx))
+    N = min(num, Nx)
 
     # Check if we can use faster real FFT
     if np.isrealobj(x):
