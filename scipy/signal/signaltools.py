@@ -2249,8 +2249,7 @@ def resample(x, num, t=None, axis=0, window=None):
 
         # Apply window to spectrum
         if window is not None:
-            newshape_W[axis] = len(W)
-            # Fold the window back on itself to mimic previous behavior
+            # Fold the window back on itself to mimic complex behavior
             W_real = W.copy()
             W_real[1:] += W_real[-1:0:-1]
             W_real[1:] *= 0.5
