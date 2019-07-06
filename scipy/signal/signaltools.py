@@ -2304,15 +2304,15 @@ def resample(x, num, t=None, axis=0, window=None):
             if num < Nx:  # downsampling
                 # select the component at frequency N/2,
                 # add the component of X at N/2
-                sl[axis] = slice(N//2, N//2+1, None)
+                sl[axis] = slice(N//2, N//2+1)
                 Y[tuple(sl)] += X[tuple(sl)]
             elif Nx < num:  # upsampling
                 # select the component at frequency -N/2 and halve it
-                sl[axis] = slice(num-N//2, num-N//2+1, None)
+                sl[axis] = slice(num-N//2, num-N//2+1)
                 Y[tuple(sl)] *= 0.5
                 temp = Y[tuple(sl)]
                 # set the component at +N/2 equal to the component at -N/2
-                sl[axis] = slice(N//2, N//2+1, None)
+                sl[axis] = slice(N//2, N//2+1)
                 Y[tuple(sl)] = temp
 
         # Inverse transform
