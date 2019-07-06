@@ -2274,35 +2274,29 @@ def resample(x, num, t=None, axis=0, window=None):
     # Placeholder array for output spectrum
     if real_input:
         newshape[axis] = num // 2 + 1
-        Y = zeros(newshape, X.dtype)
     else:
         newshape[axis] = num
-        Y = zeros(newshape, X.dtype)
+    Y = zeros(newshape, X.dtype)
 
-    if real_input:
-        # Copy positive frequency components (and Nyquist, if present)
-        sl[axis] = slice(0, nyq)
-        Y[tuple(sl)] = X[tuple(sl)]
-    else:
-        # Copy positive frequency components (and Nyquist, if present)
-        sl[axis] = slice(0, nyq)
-        Y[tuple(sl)] = X[tuple(sl)]
+    # Copy positive frequency components (and Nyquist, if present)
+    sl[axis] = slice(0, nyq)
+    Y[tuple(sl)] = X[tuple(sl)]
+    if not real_input:
+        # Copy negative frequency components
         if N > 2:  # (slice expression doesn't collapse to empty array)
-            # Copy negative frequency components
             sl[axis] = slice(nyq - N, None)
             Y[tuple(sl)] = X[tuple(sl)]
 
     # Split/join Nyquist component(s) if present
     # So far we have set Y[+N/2]=X[+N/2]
-    if real_input:
-        if N % 2 == 0:
+    if N % 2 == 0:
+        if real_input:
             sl[axis] = slice(N//2, N//2 + 1)
             if num < Nx:  # downsampling
                 Y[tuple(sl)] *= 2.
             elif Nx < num:  # upsampling
                 Y[tuple(sl)] *= 0.5
-    else:
-        if N % 2 == 0:
+        else:
             if num < Nx:  # downsampling
                 # select the component of Y at frequency +N/2,
                 # add the component of X at -N/2
