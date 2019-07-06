@@ -2241,6 +2241,9 @@ def resample(x, num, t=None, axis=0, window=None):
     sl = [slice(None)] * x.ndim
     N = min(num, Nx)
 
+    # Slice index for positive frequency components (and Nyquist, if present)
+    nyq = N // 2 + 1
+
     # Check if we can use faster real FFT
     if np.isrealobj(x):
 
@@ -2261,13 +2264,12 @@ def resample(x, num, t=None, axis=0, window=None):
         Y = zeros(newshape, X.dtype)
 
         # Copy positive frequency components (and Nyquist, if present)
-        nyq = N // 2 + 1
         sl[axis] = slice(0, nyq)
         Y[tuple(sl)] = X[tuple(sl)]
 
         # Split/join Nyquist component(s) if present
         if N % 2 == 0:
-            sl[axis] = slice(nyq-1, nyq)
+            sl[axis] = slice(N//2, N//2 + 1)
             if num < Nx:  # downsampling
                 Y[tuple(sl)] *= 2.
             elif Nx < num:  # upsampling
@@ -2291,11 +2293,11 @@ def resample(x, num, t=None, axis=0, window=None):
         Y = zeros(newshape, X.dtype)
 
         # Copy positive frequency components (and Nyquist, if present)
-        sl[axis] = slice(0, N // 2 + 1)
+        sl[axis] = slice(0, nyq)
         Y[tuple(sl)] = X[tuple(sl)]
         if N > 2:  # (slice expression doesn't collapse to empty array)
             # Copy negative frequency components
-            sl[axis] = slice(N // 2 + 1 - N, None)
+            sl[axis] = slice(nyq - N, None)
             Y[tuple(sl)] = X[tuple(sl)]
 
         # Split/join Nyquist component(s) if present
@@ -2304,15 +2306,15 @@ def resample(x, num, t=None, axis=0, window=None):
             if num < Nx:  # downsampling
                 # select the component of Y at frequency +N/2,
                 # add the component of X at -N/2
-                sl[axis] = slice(-N//2, -N//2+1)
+                sl[axis] = slice(-N//2, -N//2 + 1)
                 Y[tuple(sl)] += X[tuple(sl)]
             elif Nx < num:  # upsampling
                 # select the component at frequency +N/2 and halve it
-                sl[axis] = slice(N//2, N//2+1)
+                sl[axis] = slice(N//2, N//2 + 1)
                 Y[tuple(sl)] *= 0.5
                 temp = Y[tuple(sl)]
                 # set the component at -N/2 equal to the component at +N/2
-                sl[axis] = slice(num-N//2, num-N//2+1)
+                sl[axis] = slice(-N//2, -N//2 + 1)
                 Y[tuple(sl)] = temp
 
         # Inverse transform
