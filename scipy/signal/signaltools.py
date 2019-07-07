@@ -2246,15 +2246,14 @@ def resample(x, num, t=None, axis=0, window=None):
             W = fftpack.ifftshift(get_window(window, Nx))
 
         newshape_W = [1] * x.ndim
+        newshape_W[axis] = X.shape[axis]
         if real_input:
             # Fold the window back on itself to mimic complex behavior
             W_real = W.copy()
             W_real[1:] += W_real[-1:0:-1]
             W_real[1:] *= 0.5
-            newshape_W[axis] = X.shape[axis]
-            X *= W_real[:X.shape[axis]].reshape(newshape_W)
+            X *= W_real[:newshape_W[axis]].reshape(newshape_W)
         else:
-            newshape_W[axis] = len(W)
             X *= W.reshape(newshape_W)
 
     # Copy each half of the original spectrum to the output spectrum, either
