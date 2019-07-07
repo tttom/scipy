@@ -2224,16 +2224,6 @@ def resample(x, num, t=None, axis=0, window=None):
     """
     x = asarray(x)
     Nx = x.shape[axis]
-    if window is not None:
-        if callable(window):
-            W = window(fftpack.fftfreq(Nx))
-        elif isinstance(window, ndarray):
-            if window.shape != (Nx,):
-                raise ValueError('window must have the same length as data')
-            W = window
-        else:
-            W = fftpack.ifftshift(get_window(window, Nx))
-        newshape_W = [1] * x.ndim
 
     # Placeholder array for output spectrum
     newshape = list(x.shape)
@@ -2254,16 +2244,25 @@ def resample(x, num, t=None, axis=0, window=None):
         X = fftpack.fft(x, axis=axis)
 
     # Apply window to spectrum
-    if real_input:
-        if window is not None:
+    if window is not None:
+        if callable(window):
+            W = window(fftpack.fftfreq(Nx))
+        elif isinstance(window, ndarray):
+            if window.shape != (Nx,):
+                raise ValueError('window must have the same length as data')
+            W = window
+        else:
+            W = fftpack.ifftshift(get_window(window, Nx))
+
+        newshape_W = [1] * x.ndim
+        if real_input:
             # Fold the window back on itself to mimic complex behavior
             W_real = W.copy()
             W_real[1:] += W_real[-1:0:-1]
             W_real[1:] *= 0.5
             newshape_W[axis] = X.shape[axis]
             X *= W_real[:X.shape[axis]].reshape(newshape_W)
-    else:
-        if window is not None:
+        else:
             newshape_W[axis] = len(W)
             X *= W.reshape(newshape_W)
 
