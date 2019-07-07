@@ -2225,15 +2225,6 @@ def resample(x, num, t=None, axis=0, window=None):
     x = asarray(x)
     Nx = x.shape[axis]
 
-    # Placeholder array for output spectrum
-    newshape = list(x.shape)
-
-    sl = [slice(None)] * x.ndim
-    N = min(num, Nx)
-
-    # Slice index for positive frequency components (and Nyquist, if present)
-    nyq = N // 2 + 1
-
     # Check if we can use faster real FFT
     real_input = np.isrealobj(x)
 
@@ -2271,6 +2262,7 @@ def resample(x, num, t=None, axis=0, window=None):
     # (upsampling)
 
     # Placeholder array for output spectrum
+    newshape = list(x.shape)
     if real_input:
         newshape[axis] = num // 2 + 1
     else:
@@ -2278,6 +2270,9 @@ def resample(x, num, t=None, axis=0, window=None):
     Y = zeros(newshape, X.dtype)
 
     # Copy positive frequency components (and Nyquist, if present)
+    N = min(num, Nx)
+    nyq = N // 2 + 1  # Slice index that includes Nyquist if present
+    sl = [slice(None)] * x.ndim
     sl[axis] = slice(0, nyq)
     Y[tuple(sl)] = X[tuple(sl)]
     if not real_input:
