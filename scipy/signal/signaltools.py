@@ -2290,22 +2290,20 @@ def resample(x, num, t=None, axis=0, window=None):
     # Split/join Nyquist component(s) if present
     # So far we have set Y[+N/2]=X[+N/2]
     if N % 2 == 0:
-        if real_input:
-            sl[axis] = slice(N//2, N//2 + 1)
-            if num < Nx:  # downsampling
+        if num < Nx:  # downsampling
+            if real_input:
+                sl[axis] = slice(N//2, N//2 + 1)
                 Y[tuple(sl)] *= 2.
-            elif Nx < num:  # upsampling
-                Y[tuple(sl)] *= 0.5
-        else:
-            if num < Nx:  # downsampling
+            else:
                 # select the component of Y at frequency +N/2,
                 # add the component of X at -N/2
                 sl[axis] = slice(-N//2, -N//2 + 1)
                 Y[tuple(sl)] += X[tuple(sl)]
-            elif Nx < num:  # upsampling
-                # select the component at frequency +N/2 and halve it
-                sl[axis] = slice(N//2, N//2 + 1)
-                Y[tuple(sl)] *= 0.5
+        elif Nx < num:  # upsampling
+            # select the component at frequency +N/2 and halve it
+            sl[axis] = slice(N//2, N//2 + 1)
+            Y[tuple(sl)] *= 0.5
+            if not real_input:
                 temp = Y[tuple(sl)]
                 # set the component at -N/2 equal to the component at +N/2
                 sl[axis] = slice(-N//2, -N//2 + 1)
