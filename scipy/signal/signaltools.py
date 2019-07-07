@@ -2291,14 +2291,10 @@ def resample(x, num, t=None, axis=0, window=None):
     # So far we have set Y[+N/2]=X[+N/2]
     if N % 2 == 0:
         if num < Nx:  # downsampling
-            if real_input:
-                sl[axis] = slice(N//2, N//2 + 1)
-                Y[tuple(sl)] *= 2.
-            else:
-                # select the component of Y at frequency +N/2,
-                # add the component of X at -N/2
-                sl[axis] = slice(-N//2, -N//2 + 1)
-                Y[tuple(sl)] += X[tuple(sl)]
+            # select the component of Y at frequency +N/2 (= -N/2),
+            # add the component of X at -N/2
+            sl[axis] = slice(-N//2, -N//2 + 1)
+            Y[tuple(sl)] += X[tuple(sl)]
         elif Nx < num:  # upsampling
             # select the component at frequency +N/2 and halve it
             sl[axis] = slice(N//2, N//2 + 1)
