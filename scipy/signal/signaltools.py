@@ -2290,29 +2290,29 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = num
         Y = zeros(newshape, X.dtype)
 
-        # Copy positive frequency components
-        sl[axis] = slice(0, (N + 1) // 2)
+        # Copy positive frequency components (and Nyquist, if present)
+        sl[axis] = slice(0, N // 2 + 1)
         Y[tuple(sl)] = X[tuple(sl)]
-        if N > 1:
-            # Copy negative frequency components (and Nyquist, if present)
-            sl[axis] = slice(-(N - 1) // 2, None)
+        if N > 2:  # (slice expression doesn't collapse to empty array)
+            # Copy negative frequency components
+            sl[axis] = slice(N // 2 + 1 - N, None)
             Y[tuple(sl)] = X[tuple(sl)]
 
         # Split/join Nyquist component(s) if present
-        # So far we have set Y[-N/2]=X[-N/2]
+        # So far we have set Y[+N/2]=X[+N/2]
         if N % 2 == 0:
             if num < Nx:  # downsampling
-                # select the component at frequency N/2,
-                # add the component of X at N/2
-                sl[axis] = slice(N//2, N//2+1)
+                # select the component of Y at frequency +N/2,
+                # add the component of X at -N/2
+                sl[axis] = slice(-N//2, -N//2+1)
                 Y[tuple(sl)] += X[tuple(sl)]
             elif Nx < num:  # upsampling
-                # select the component at frequency -N/2 and halve it
-                sl[axis] = slice(num-N//2, num-N//2+1)
+                # select the component at frequency +N/2 and halve it
+                sl[axis] = slice(N//2, N//2+1)
                 Y[tuple(sl)] *= 0.5
                 temp = Y[tuple(sl)]
-                # set the component at +N/2 equal to the component at -N/2
-                sl[axis] = slice(N//2, N//2+1)
+                # set the component at -N/2 equal to the component at +N/2
+                sl[axis] = slice(num-N//2, num-N//2+1)
                 Y[tuple(sl)] = temp
 
         # Inverse transform
