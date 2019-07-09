@@ -2245,12 +2245,16 @@ def resample(x, num, t=None, axis=0, window=None):
     nyq = N // 2 + 1
 
     # Check if we can use faster real FFT
-    if np.isrealobj(x):
+    real_input = np.isrealobj(x)
 
-        # Forward transform
+    # Forward transform
+    if real_input:
         X = np.fft.rfft(x, axis=axis)
+    else:  # Full complex FFT
+        X = fftpack.fft(x, axis=axis)
 
-        # Apply window to spectrum
+    # Apply window to spectrum
+    if real_input:
         if window is not None:
             # Fold the window back on itself to mimic complex behavior
             W_real = W.copy()
@@ -2258,40 +2262,28 @@ def resample(x, num, t=None, axis=0, window=None):
             W_real[1:] *= 0.5
             newshape_W[axis] = X.shape[axis]
             X *= W_real[:X.shape[axis]].reshape(newshape_W)
-
-        # Placeholder array for output spectrum
-        newshape[axis] = num // 2 + 1
-        Y = zeros(newshape, X.dtype)
-
-        # Copy positive frequency components (and Nyquist, if present)
-        sl[axis] = slice(0, nyq)
-        Y[tuple(sl)] = X[tuple(sl)]
-
-        # Split/join Nyquist component(s) if present
-        if N % 2 == 0:
-            sl[axis] = slice(N//2, N//2 + 1)
-            if num < Nx:  # downsampling
-                Y[tuple(sl)] *= 2.
-            elif Nx < num:  # upsampling
-                Y[tuple(sl)] *= 0.5
-
-        # Inverse transform
-        y = np.fft.irfft(Y, num, axis=axis)
-
-    # Full complex FFT
     else:
-        # Forward transform
-        X = fftpack.fft(x, axis=axis)
-
-        # Apply window to spectrum
         if window is not None:
             newshape_W[axis] = len(W)
             X *= W.reshape(newshape_W)
 
-        # Placeholder array for output spectrum
+    # Copy each half of the original spectrum to the output spectrum, either
+    # truncating high frequences (downsampling) or zero-padding them
+    # (upsampling)
+
+    # Placeholder array for output spectrum
+    if real_input:
+        newshape[axis] = num // 2 + 1
+        Y = zeros(newshape, X.dtype)
+    else:
         newshape[axis] = num
         Y = zeros(newshape, X.dtype)
 
+    if real_input:
+        # Copy positive frequency components (and Nyquist, if present)
+        sl[axis] = slice(0, nyq)
+        Y[tuple(sl)] = X[tuple(sl)]
+    else:
         # Copy positive frequency components (and Nyquist, if present)
         sl[axis] = slice(0, nyq)
         Y[tuple(sl)] = X[tuple(sl)]
@@ -2300,8 +2292,16 @@ def resample(x, num, t=None, axis=0, window=None):
             sl[axis] = slice(nyq - N, None)
             Y[tuple(sl)] = X[tuple(sl)]
 
-        # Split/join Nyquist component(s) if present
-        # So far we have set Y[+N/2]=X[+N/2]
+    # Split/join Nyquist component(s) if present
+    # So far we have set Y[+N/2]=X[+N/2]
+    if real_input:
+        if N % 2 == 0:
+            sl[axis] = slice(N//2, N//2 + 1)
+            if num < Nx:  # downsampling
+                Y[tuple(sl)] *= 2.
+            elif Nx < num:  # upsampling
+                Y[tuple(sl)] *= 0.5
+    else:
         if N % 2 == 0:
             if num < Nx:  # downsampling
                 # select the component of Y at frequency +N/2,
@@ -2317,7 +2317,10 @@ def resample(x, num, t=None, axis=0, window=None):
                 sl[axis] = slice(-N//2, -N//2 + 1)
                 Y[tuple(sl)] = temp
 
-        # Inverse transform
+    # Inverse transform
+    if real_input:
+        y = np.fft.irfft(Y, num, axis=axis)
+    else:
         y = fftpack.ifft(Y, axis=axis, overwrite_x=True)
 
     y *= (float(num) / float(Nx))
